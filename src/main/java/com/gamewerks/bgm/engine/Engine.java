@@ -43,9 +43,11 @@ public class Engine {
     private void trySpawnBlock() {
         if (activePiece == null) {
             entryCounter += 1;
+            if (entryCounter >= attrs.are()) { 
             activePiece = new Piece(PieceKind.I,
                 new Position(Constants.BOARD_HEIGHT - 1, Constants.BOARD_WIDTH / 2 - 2));
             entryCounter = 0;
+            }
             lineWasCleared = false;
             if (board.collides(activePiece)) {
                 System.exit(0);
@@ -85,8 +87,9 @@ public class Engine {
             if (input.isJustPressed(KeyKind.MOVE_LEFT)
                 || input.getFramesHeld(KeyKind.MOVE_LEFT) > attrs.das()) {
                 tryMovePiece(activePiece.getPosition().add(0, -1));
-            } else if (input.isJustPressed(KeyKind.MOVE_RIGHT)) {
-                tryMovePiece(activePiece.getPosition().add(0, 1)); 
+            } else if (input.isJustPressed(KeyKind.MOVE_RIGHT) 
+                || input.getFramesHeld(KeyKind.MOVE_RIGHT) > attrs.das()) {
+                tryMovePiece(activePiece.getPosition().add(0, -1)); 
             }
 
             // 2. Process rotations
@@ -161,9 +164,14 @@ public class Engine {
      * @return true iff at least one line is cleared
      */
     private boolean processClearedLines() {
+        entryCounter += 1;
         List<Integer> completedRows = board.getCompletedRows();
-        board.deleteRows(completedRows);
+        if (entryCounter >= attrs.lineAre()) {
+            board.deleteRows(completedRows);
+            entryCounter = 0;
+        }
         return completedRows.size() > 0;
+
     }
    
     /** Steps the game engine one frame forward. */
