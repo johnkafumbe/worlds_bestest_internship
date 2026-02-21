@@ -1,6 +1,7 @@
 package com.gamewerks.bgm.engine;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.gamewerks.bgm.util.Constants;
 import com.gamewerks.bgm.util.Position;
@@ -15,9 +16,11 @@ public class Engine {
     private Piece activePiece;
     private GameAttributes attrs;
     private InputState input;
+    private PieceKind[] blockGen;
 
     private int lockCounter;
     private int entryCounter;
+    private int blockIndex;
     private boolean lineWasCleared;
     private boolean isSoftDropping;
     private boolean isHardDropping;
@@ -27,12 +30,30 @@ public class Engine {
         board = new Well();
         lockCounter = 0;
         entryCounter = 0;
+        blockIndex = 0;
         lineWasCleared = false;
         isSoftDropping = false;
         isHardDropping = false;
         attrs = new GameAttributes(48, 25, 14, 30, 40, 24);
         input = new InputState();
+        blockGen = shuffle();
         trySpawnBlock();
+    }
+
+    /**
+     * 
+     */
+    private PieceKind[] shuffle() {
+        PieceKind[] blockArray = {PieceKind.I, PieceKind.J, PieceKind.L, PieceKind.O, PieceKind.S, PieceKind.T, PieceKind.Z};
+        for (int i = blockArray.length - 1; i >= 1; i--) {
+            int j = ThreadLocalRandom.current().nextInt(0, i);
+            PieceKind oldJ = blockArray[j];
+            blockArray[j] = blockArray[i];
+            blockArray[i] = oldJ;
+        }
+
+        blockIndex = 0;
+        return blockArray;
     }
 
     /**
@@ -44,9 +65,10 @@ public class Engine {
         if (activePiece == null) {
             entryCounter += 1;
             if (entryCounter >= attrs.are()) { 
-            activePiece = new Piece(PieceKind.I,
-                new Position(Constants.BOARD_HEIGHT - 1, Constants.BOARD_WIDTH / 2 - 2));
-            entryCounter = 0;
+                activePiece = new Piece(blockGen[blockIndex],
+                    new Position(Constants.BOARD_HEIGHT - 1, Constants.BOARD_WIDTH / 2 - 2));
+                entryCounter = 0;
+                blockIndex++;
             }
             lineWasCleared = false;
             if (board.collides(activePiece)) {
@@ -176,6 +198,9 @@ public class Engine {
    
     /** Steps the game engine one frame forward. */
     public void step() {
+        if (blockIndex >= 7) {
+            blockGen = shuffle();
+        }
         trySpawnBlock();
         processInput();
         processGravity();
